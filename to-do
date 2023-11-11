@@ -1,0 +1,12 @@
+make functions for: 
+echo
+cd
+ls
+pwd
+cat
+cp
+rm
+mv
+mkdir
+exit
+must manage the program interuption ctrl + D
