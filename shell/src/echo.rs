@@ -1,13 +1,13 @@
-// //use std::string;
+// use std::string;
 
-// use std::process::Command;
+use std::process::Command;
 
-// pub fn echo(input: &str) {
-//     let output = Command::new("sh")
-//                      .arg("-c")
-//                      .arg(format!("{}", input))
-//                      .output()
-//                      .expect("Failed to execute command");
+pub fn echo(input: &str) {
+    let _output = Command::new("sh")
+        .arg("-c")
+        .arg(format!("{}", input))
+        .output()
+        .expect("Failed to execute command");
 
-//     println!("{}", String::from_utf8_lossy(&output.stdout));
-// }
+    // println!("{}", String::from_utf8_lossy(&output.stdout));
+}

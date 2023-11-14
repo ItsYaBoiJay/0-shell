@@ -1,11 +1,11 @@
 make functions for: 
-echo
-cd
-ls
-pwd
+echo ✓
+cd 
+ls (flags)
+pwd ✓
 cat
 cp
-rm
+rm (flags)
 mv
 mkdir
 exit

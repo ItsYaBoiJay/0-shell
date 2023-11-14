@@ -1,7 +1,9 @@
-// use std::io::{self, Write};
+// use std::io::{ self, Write };
 // use std::process::Command;
 // pub mod echo;
+// pub mod cd;
 // use echo::echo;
+// use cd::cd;
 
 // fn main() {
 //     loop {
@@ -15,28 +17,46 @@
 //         let command = parts.next().unwrap();
 //         let args = parts;
 
-//         let output = Command::new(command)
-//         .args(args)
-//         .output();
+//         let output = Command::new(command).args(args).output();
+
+//         echo(&input);
 
 //         match output {
 //             Ok(output) => {
 //                 println!("{}", String::from_utf8_lossy(&output.stdout));
-//             },
+//             }
 //             Err(e) => {
 //                 println!("Error: {}", e);
 //             }
 //         }
-//        // .expect("failed to execute command");
-        
-//         echo(&input);
+//         // .expect("failed to execute command");
+
 //         //println!("You entered: {}", input.trim());
 //     }
 // }
 
-
+use std::io::{ self, Write };
 use std::process::Command;
-use std::io::{self, Write};
+pub mod echo;
+pub mod cd;
+pub mod ls;
+pub mod pwd;
+pub mod cat;
+pub mod cp;
+pub mod rm;
+pub mod mv;
+pub mod mkdir;
+pub mod exit;
+use echo::echo;
+use cd::cd;
+use ls::ls;
+use pwd::pwd;
+use cat::cat;
+// use cp::cp;
+// use rm::rm;
+// use mv::mv;
+// use mkdir::mkdir;
+// use exit::exit;
 
 fn main() {
     loop {
@@ -48,73 +68,43 @@ fn main() {
 
         let mut parts = input.trim().split_whitespace();
         let command = parts.next().unwrap();
-        let args = parts;
-
+        let mut args = parts;
+        echo(&input);
         match command {
-            "echo" => {
-                let output = args.collect::<Vec<_>>().join(" ");
-                println!("{}", output);
-            },
+            // "echo" => {
+            //     echo(&input);
+            // }
             "cd" => {
-                let path = args.peekable().peek().map_or("/", |x| *x);
-                let root = std::path::Path::new(path);
-                if let Err(e) = std::env::set_current_dir(&root) {
-                    eprintln!("{}", e);
+                if let Some(dir) = args.next() {
+                    cd(dir);
+                } else {
+                    eprintln!("No directory provided for cd command");
                 }
-            },
+            }
             "ls" => {
-                Command::new("ls")
-                        .args(args)
-                        .status()
-                        .expect("Failed to execute command");
-            },
+                ls(args.collect::<Vec<_>>().as_slice());
+            }
             "pwd" => {
-                let path = std::env::current_dir().unwrap();
-                println!("{}", path.display());
-            },
+                pwd();
+            }
             "cat" => {
-                let filename = args.peekable().peek().map_or("", |x| *x);
-                let output = Command::new("cat")
-                                 .arg(filename)
-                                 .output()
-                                 .expect("Failed to execute command");
-                println!("{}", String::from_utf8_lossy(&output.stdout));
-            },
-            "cp" => {
-                let mut args = args;
-                let src = args.next().unwrap();
-                let dest = args.next().unwrap();
-                Command::new("cp")
-                        .arg(src)
-                        .arg(dest)
-                        .status()
-                        .expect("Failed to execute command");
-            },
-            "rm" => {
-                Command::new("rm")
-                        .args(args)
-                        .status()
-                        .expect("Failed to execute command");
-            },
-            "mv" => {
-                let mut args = args;
-                let src = args.next().unwrap();
-                let dest = args.next().unwrap();
-                Command::new("mv")
-                        .arg(src)
-                        .arg(dest)
-                        .status()
-                        .expect("Failed to execute command");
-            },
-            "mkdir" => {
-                Command::new("mkdir")
-                        .args(args)
-                        .status()
-                        .expect("Failed to execute command");
-            },
-            "exit" => return,
-            command => {
-                eprintln!("{}: command not found", command);
+                if let Some(filename) = args.next() {
+                    cat(filename);
+                } else {
+                    eprintln!("No filename provided for cat command");
+                }
+            }
+            _ => {
+                let output = Command::new(command).args(args).output();
+
+                match output {
+                    Ok(output) => {
+                        println!("{}", String::from_utf8_lossy(&output.stdout));
+                    }
+                    Err(e) => {
+                        println!("Error: {}", e);
+                    }
+                }
             }
         }
     }
