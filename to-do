@@ -3,10 +3,10 @@ echo ✓
 cd 
 ls (flags)
 pwd ✓
-cat
-cp
-rm (flags)
-mv
-mkdir
-exit
+cat ✓
+cp ✓
+rm (flags) ✓
+mv ✓
+mkdir (flags) -p
+exit ✓
 must manage the program interuption ctrl + D
