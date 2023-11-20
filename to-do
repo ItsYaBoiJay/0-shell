@@ -1,12 +1,24 @@
-make functions for: 
+Done functions:
 echo ✓
-cd 
-ls (flags)
 pwd ✓
-cat ✓
 cp ✓
 rm (flags) ✓
 mv ✓
-mkdir (flags) -p
 exit ✓
+
+Still unsure:
+cd 
+cat 
+ls (flags) -l, -a, -F
+mkdir (flags) -p (make sure that you can use parent/child 
+to add folder and sub-folders)
 must manage the program interuption ctrl + D
+
+Bonus: 
+Manage the interruption Ctrl + C
+Auto complete when you are writing
+Add piping
+Add redirection
+Have your path behind the $ like (~/Desktop/0-shell $)
+Add colors for the directories or errors
+Other advanced commands you may like
