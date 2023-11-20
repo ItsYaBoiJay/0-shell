@@ -32,11 +32,11 @@ fn main() {
         let mut parts = input.trim().split_whitespace();
         let command = parts.next().unwrap();
         let mut args = parts;
-        echo(&input);
+        // echo(&input);
         match command {
-            // "echo" => {
-            //     echo(&input);
-            // }
+            "echo" => {
+                echo(&input);
+            }
             "cd" => {
                 if let Some(dir) = args.next() {
                     cd(dir);

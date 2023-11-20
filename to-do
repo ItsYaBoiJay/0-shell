@@ -2,13 +2,13 @@ Done functions:
 echo ✓
 pwd ✓
 cp ✓
-rm (flags) ✓
 mv ✓
 exit ✓
 
 Still unsure:
 cd 
 cat 
+rm (flags) (can't remove old folders created in a previous mkdir command)
 ls (flags) -l, -a, -F
 mkdir (flags) -p (make sure that you can use parent/child 
 to add folder and sub-folders)
