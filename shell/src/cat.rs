@@ -11,7 +11,7 @@
 // }
 
 use std::fs::File;
-use std::io::{ BufRead, BufReader };
+use std::io::{BufRead, BufReader};
 use std::path::Path;
 
 pub fn cat(filename: &str) {
@@ -19,7 +19,17 @@ pub fn cat(filename: &str) {
     let file = match File::open(&path) {
         Ok(file) => file,
         Err(e) => {
-            eprintln!("Error: {}", e);
+            match e.kind() {
+                std::io::ErrorKind::NotFound => {
+                    eprintln!("File '{}' not found", filename);
+                }
+                std::io::ErrorKind::PermissionDenied => {
+                    eprintln!("Permission denied for file '{}'", filename);
+                }
+                _ => {
+                    eprintln!("Error opening file '{}': {}", filename, e);
+                }
+            }
             return;
         }
     };
@@ -29,7 +39,7 @@ pub fn cat(filename: &str) {
         match line {
             Ok(line) => println!("{}", line),
             Err(e) => {
-                eprintln!("Error: {}", e);
+                eprintln!("Error reading file '{}': {}", filename, e);
                 return;
             }
         }
