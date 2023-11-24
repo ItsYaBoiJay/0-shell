@@ -3,14 +3,14 @@ echo ✓
 pwd ✓ 
 exit ✓
 cat ✓
+ls (flags) -l, -a, -F ✓
 must manage the program interuption Ctrl + D ✓
+cd ✓
 
 Still unsure:
-cd 
 mv 
 cp 
 rm (flags) (can't rm folders, if they aren't empty)
-ls (flags) -l, -a, -F
 mkdir (flags) -p (make sure that you can use parent/child 
 to add folder and sub-folders)
 
