@@ -12,13 +12,15 @@ cp ✓
 mkdir (flags) -p ✓
 
 To-do:
+Make sure enter doesn't crash it
+Error messages might need to be added/updated
 Readme
 
 Bonus: 
 Manage the interruption Ctrl + C
 Auto complete when you are writing
 Add piping
-Add redirection
-Have your path behind the $ like (~/Desktop/0-shell $)
+Have your path behind the $ like (~/Desktop/0-shell $) ✓
+Add redirection ✓
 Add colors for the directories or errors
 Other advanced commands you may like
