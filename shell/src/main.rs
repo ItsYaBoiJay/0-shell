@@ -63,7 +63,7 @@ fn main() {
                             let _ = cp::cp(args[0], args[1]);
                         } else {
                             eprintln!("Usage: cp <source> <destination>");
-                        }
+                        } // Error needed
                     }
                     "rm" => {
                         let files: Vec<&str> = args
@@ -77,7 +77,7 @@ fn main() {
                         let force = args.iter().any(|&x| (x == "-f" || x == "--force"));
 
                         let _ = rm::rm(&files, recursive, force);
-                    }
+                    } // Error needed
                     "mkdir" => {
                         if let Some(dir) = args.get(0) {
                             let _ = mkdir::mkdir(dir, false);
@@ -90,10 +90,10 @@ fn main() {
                             let _ = mv::mv(args[0], args[1]);
                         } else {
                             eprintln!("Usage: mv <source> <destination>");
-                        }
+                        } // Error needed
                     }
                     "echo" => {
-                        echo::echo(&args);
+                        echo::echo(&args); // Error needed
                     }
                     _ => {
                         let output = Command::new(command).args(&args).output();
@@ -104,6 +104,7 @@ fn main() {
                             }
                             Err(_e) => {
                                 // Handle errors if needed
+                                //eprintln!("Error: {}", e);
                             }
                         }
                     }
