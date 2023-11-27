@@ -7,7 +7,7 @@ pub fn rm(files: &[&str], recursive: bool, force: bool) -> io::Result<()> {
             if force {
                 fs::remove_dir_all(file)?;
             } else {
-                fs::remove_dir(file)?;
+                fs::remove_dir_all(file)?;
             }
         } else {
             if force {
@@ -17,5 +17,5 @@ pub fn rm(files: &[&str], recursive: bool, force: bool) -> io::Result<()> {
             }
         }
     }
-    Ok(())
+    Ok(()) // Return Ok(()) to indicate success
 }

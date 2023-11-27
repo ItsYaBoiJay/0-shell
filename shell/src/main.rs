@@ -1,4 +1,5 @@
-use std::io::{self, Write};
+use std::env;
+use std::io::{ self, Write };
 use std::process::Command;
 pub mod echo;
 pub mod cd;
@@ -13,7 +14,13 @@ pub mod exit;
 
 fn main() {
     loop {
-        print!("$ ");
+        let current_dir = env::current_dir().unwrap();
+        let current_dir_str = current_dir
+            .to_str()
+            .unwrap()
+            .replace(env::var("HOME").unwrap().as_str(), "~");
+
+        print!("{} $ ", current_dir_str);
         io::stdout().flush().unwrap();
 
         let mut input = String::new();
@@ -59,15 +66,21 @@ fn main() {
                         }
                     }
                     "rm" => {
-                        let files: Vec<&str> = args.iter().filter(|&&x| !x.starts_with('-')).copied().collect();
-                        let recursive = args.iter().any(|&x| x == "-r" || x == "-R" || x == "--recursive");
-                        let force = args.iter().any(|&x| x == "-f" || x == "--force");
+                        let files: Vec<&str> = args
+                            .iter()
+                            .filter(|&&x| !x.starts_with('-'))
+                            .copied()
+                            .collect();
+                        let recursive = args
+                            .iter()
+                            .any(|&x| (x == "-r" || x == "-R" || x == "--recursive"));
+                        let force = args.iter().any(|&x| (x == "-f" || x == "--force"));
 
                         let _ = rm::rm(&files, recursive, force);
                     }
                     "mkdir" => {
                         if let Some(dir) = args.get(0) {
-                            let _ = mkdir::mkdir(dir);
+                            let _ = mkdir::mkdir(dir, false);
                         } else {
                             eprintln!("No directory name provided for mkdir command");
                         }
