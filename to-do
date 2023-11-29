@@ -10,10 +10,10 @@ mv ✓
 cd ✓
 cp ✓
 mkdir (flags) -p ✓
+Make sure enter doesn't crash it ✓
+Error messages need to be added/updated ✓
 
 To-do:
-Make sure enter doesn't crash it
-Error messages need to be added/updated
 Readme
 
 Bonus: 

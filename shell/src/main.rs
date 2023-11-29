@@ -30,6 +30,10 @@ fn main() {
                 break; // Exit the program when Ctrl+D is detected
             }
             Ok(_) => {
+                if input.trim().is_empty() {
+                    continue; // Skip the rest of the loop if the input is empty
+                }
+
                 let mut parts = input.trim().split_whitespace();
                 let command = parts.next().unwrap();
                 let args: Vec<&str> = parts.collect();
@@ -63,7 +67,7 @@ fn main() {
                             let _ = cp::cp(args[0], args[1]);
                         } else {
                             eprintln!("Usage: cp <source> <destination>");
-                        } // Error needed
+                        }
                     }
                     "rm" => {
                         let files: Vec<&str> = args
@@ -76,8 +80,28 @@ fn main() {
                             .any(|&x| (x == "-r" || x == "-R" || x == "--recursive"));
                         let force = args.iter().any(|&x| (x == "-f" || x == "--force"));
 
-                        let _ = rm::rm(&files, recursive, force);
-                    } // Error needed
+                        let mut command = Command::new("rm");
+                        if recursive {
+                            command.arg("-r");
+                        }
+                        if force {
+                            command.arg("-f");
+                        }
+                        for file in files {
+                            command.arg(file);
+                        }
+
+                        match command.output() {
+                            Ok(output) => {
+                                if !output.status.success() {
+                                    eprintln!("Error: {}", String::from_utf8_lossy(&output.stderr));
+                                }
+                            }
+                            Err(e) => {
+                                eprintln!("Error: {}", e);
+                            }
+                        }
+                    }
                     "mkdir" => {
                         if let Some(dir) = args.get(0) {
                             let _ = mkdir::mkdir(dir, false);
@@ -87,13 +111,29 @@ fn main() {
                     }
                     "mv" => {
                         if args.len() >= 2 {
-                            let _ = mv::mv(args[0], args[1]);
+                            let mut command = Command::new("mv");
+                            command.args(&args);
+
+                            match command.status() {
+                                Ok(status) => {
+                                    if !status.success() {
+                                        eprintln!("Error: mv command failed with exit status {}", status);
+                                    }
+                                }
+                                Err(e) => {
+                                    eprintln!("Error: {}", e);
+                                }
+                            }
                         } else {
                             eprintln!("Usage: mv <source> <destination>");
-                        } // Error needed
+                        }
                     }
+
                     "echo" => {
-                        echo::echo(&args); // Error needed
+                        let result = echo::echo(&args);
+                        if let Err(e) = result {
+                            eprintln!("Error: {}", e);
+                        }
                     }
                     _ => {
                         let output = Command::new(command).args(&args).output();
@@ -102,9 +142,9 @@ fn main() {
                             Ok(output) => {
                                 println!("{}", String::from_utf8_lossy(&output.stdout));
                             }
-                            Err(_e) => {
+                            Err(e) => {
                                 // Handle errors if needed
-                                //eprintln!("Error: {}", e);
+                                eprintln!("Error: {}", e);
                             }
                         }
                     }
