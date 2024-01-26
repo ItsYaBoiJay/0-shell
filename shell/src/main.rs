@@ -14,7 +14,7 @@ pub mod exit;
 
 fn main() {
     loop {
-        let current_dir = env::current_dir().unwrap();
+       let current_dir = env::current_dir().unwrap();
         let current_dir_str = current_dir
             .to_str()
             .unwrap()
@@ -79,29 +79,13 @@ fn main() {
                             .iter()
                             .any(|&x| (x == "-r" || x == "-R" || x == "--recursive"));
                         let force = args.iter().any(|&x| (x == "-f" || x == "--force"));
-
-                        let mut command = Command::new("rm");
-                        if recursive {
-                            command.arg("-r");
-                        }
-                        if force {
-                            command.arg("-f");
-                        }
-                        for file in files {
-                            command.arg(file);
-                        }
-
-                        match command.output() {
-                            Ok(output) => {
-                                if !output.status.success() {
-                                    eprintln!("Error: {}", String::from_utf8_lossy(&output.stderr));
-                                }
-                            }
-                            Err(e) => {
-                                eprintln!("Error: {}", e);
-                            }
+                    
+                        match rm::rm(&files, recursive, force) {
+                            Ok(_) => println!("Removal successful"),
+                            Err(e) => eprintln!("Error: {}", e),
                         }
                     }
+                    
                     "mkdir" => {
                         if let Some(dir) = args.get(0) {
                             let _ = mkdir::mkdir(dir, false);
