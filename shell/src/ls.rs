@@ -1,146 +1,201 @@
-use std::{fs, io, os::unix::fs::{MetadataExt, PermissionsExt}};
-use chrono::{DateTime, Local};
+// cmd_executor.rs
+
+use std::env;
+use std::fs;
+use std::os::unix::fs::MetadataExt;
 use users::{get_user_by_uid, get_group_by_gid};
+use chrono::prelude::*;
+use chrono::TimeZone;
 
-pub fn ls(args: &[&str]) -> Result<(), io::Error> {
-    let list_all = args.iter().any(|&arg| arg == "-a");
-    let long_format = args.iter().any(|&arg| arg == "-l");
-    let classify = args.iter().any(|&arg| arg == "-F");
+use std::path::Path;
+use fs::read_dir;
 
-    let mut entries: Vec<String> = Vec::new();
+#[doc = "The handle_ls() function handles the ls command.
+    supporting the -a, -l, and -F flags.
+    It takes a vector of arguments and returns an error
+    if one occurred while listing the directory.
+    Otherwise, it returns Ok(())"]
+pub fn handle_ls(args: Vec<&str>) -> Result<(), String> {
+    let mut list_hidden = false;
+    let mut list_long = false; 
+    let mut list_indicator = false;
 
-    // If no arguments are provided, list all entries
-    if args.is_empty() || list_all || long_format {
-        entries.push(".".to_string());
-        entries.push("..".to_string());
+    for arg in args.iter() {
+        match *arg {
+            "-a" => list_hidden = true,
+            "-l" => list_long = true,
+            "-F" => list_indicator = true,
+            _ => return Err(format!("ls: invalid option -- '{}'\nusage: ls [-a] [-l] [-F]", arg)),
+        }
     }
+    // env::current_dir() returns a Result<PathBuf, Error> that contains the current directory.
+    // If the current directory cannot be determined, an error is returned.
+    let current_dir = match env::current_dir() {
+        Ok(dir) => dir,
+        Err(err) => return Err(format!("ls: {}", err)),
+    };
+    print_entries(&current_dir, list_long, list_hidden, list_indicator)
+}
 
-    // Read directory and add entries
-    entries.extend(
-        fs::read_dir(".")?
-            .filter_map(|entry| entry.ok().map(|e| e.file_name().to_string_lossy().to_string()))
-    );
+#[doc = "print_entries() lists the entries in a directory.
+    It takes a directory path, a boolean indicating whether to
+    list details, a boolean indicating whether to list hidden
+    files, and a boolean indicating whether to list indicators.
+    it uses the read_dir() method to read the directory entries.
+    then filters out hidden files if the -a flag is not set,
+    uses print_entry_details() to print the details of each entry,
+    and print_indicator() to print an indicator character for each entry.
+    it returns an error if one occurred while reading the directory.
+    Otherwise, it returns Ok(())"]
+    fn print_entries(dir: &Path, details:bool, list_hidden: bool, list_indicator: bool) -> Result<(), String> {
+        let mut entries: Vec<_> = match read_dir(dir) {
+            Ok(entries) => {
+                // Filter out hidden files if the -a flag is not set
+                entries.filter_map(Result::ok)
+                .filter(|entry: &fs::DirEntry| list_hidden || !is_hidden(entry)).collect()
+                        
+            }
+            Err(err) => return Err(format!("ls: {}", err)),
+        };
+    
+        entries.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
+        // Print the total size of the entries if the -l flag is set
+        if details {
+            let total_size = calculate_total_size(&entries).unwrap();
+            println!("total {}", total_size);
+        }
 
-    // Sort entries
-    entries.sort();
+        // Iterate over entries
+        for entry in entries {
+            // Print entry details
+            if details {
+                print_entry_details(&entry)?;
+            }else{
+                print!("{}", entry.file_name().to_string_lossy());
+            }
+            if list_indicator {
+                print_indicator(&entry);
+            }
+            println!();
 
-    // Calculate total block count
-    let total_blocks: usize = if long_format {
-        entries.iter().filter_map(|entry| {
-            fs::metadata(entry)
-                .ok()
-                .and_then(|metadata| {
-                    if metadata.is_file() {
-                        Some(metadata.blocks() as usize / 2)
-                    } else {
-                        None
-                    }
-                })
-        }).sum()
-    } else {
-        let total_blocks = if list_all {
-            let dot_metadata = fs::metadata(".")?;
-            dot_metadata.blocks() as usize / 2
-        } else {
-            0
+        }
+    
+        Ok(())
+    }
+    
+#[doc = "Prints the details of a directory entry.
+    It takes a directory entry and prints the metadata.
+    including the mode, number of links, user ID, size,
+    and name of the entry. It returns an error if one
+    occurred while retrieving the metadata. Otherwise,
+    it returns Ok(())"]
+    fn print_entry_details(entry: &fs::DirEntry) -> Result<(), String> {
+        let metadata = match entry.metadata() {
+            Ok(meta) => meta,
+            Err(err) => return Err(format!("ls: {}", err)),
         };
 
-        let parent_metadata = fs::metadata("..")?;
-        total_blocks + (parent_metadata.blocks() as usize / 2)
-    };
+        let file_name = entry.file_name();
+        let file_name_str = file_name.to_string_lossy();
+        let user = get_user_by_uid(metadata.uid()).unwrap();
+        let group = get_group_by_gid(metadata.gid()).unwrap();
+        let formatted_time = Local.timestamp(metadata.mtime(), 0).format("%b %e %H:%M").to_string();
+        let permissions = convert_to_permission(&metadata);
+        print!("{} {} {} {} {} {} {}",
+            permissions,
+            metadata.nlink(),
+            user.name().to_string_lossy(),
+            group.name().to_string_lossy(),
+            metadata.size(),
+            formatted_time,
+            format!("{}", file_name_str),
+        );
 
-    // Print total if in long format
-    if long_format {
-        println!("total {}", total_blocks);
+        Ok(())
     }
 
-    // Iterate over entries and print details
-    for entry in entries {
-        let metadata = fs::metadata(&entry)?;
-        let file_name_str = entry.to_string();
+fn convert_to_permission(metadata: &fs::Metadata) -> String {
+    // Define a mapping of bit positions to permission characters
+    let permissions_mapping = [
+        ('r', 0o400),
+        ('w', 0o200),
+        ('x', 0o100),
+        ('r', 0o040),
+        ('w', 0o020),
+        ('x', 0o010),
+        ('r', 0o004),
+        ('w', 0o002),
+        ('x', 0o001),
+    ];
 
-        if !list_all && file_name_str.starts_with('.') {
-            continue;
-        }
-
-        if long_format {
-            print_long_format(&metadata, &file_name_str, classify)?;
-        } else {
-            if classify {
-                print!("{}{} ", file_name_str, classify_file(&metadata, &file_name_str));
-            } else {
-                print!("{}\t", file_name_str);
-            }
-        }
-    }
-
-    println!();
-    Ok(())
-}
-
-fn print_long_format(metadata: &std::fs::Metadata, file_name: &str, classify: bool) -> Result<(), io::Error> {
-    let permissions = format_permissions(metadata);
-    let links = metadata.nlink();
-
-    let user_name = get_user_by_uid(metadata.uid())
-        .map(|user| user.name().to_string_lossy().into_owned())
-        .unwrap_or_else(|| metadata.uid().to_string());
-
-    let group_name = get_group_by_gid(metadata.gid())
-        .map(|group| group.name().to_string_lossy().into_owned())
-        .unwrap_or_else(|| metadata.gid().to_string());
-
-    let size = metadata.len();
-    let datetime: DateTime<Local> = metadata.modified().unwrap_or_else(|_| Local::now().into()).into();
-    let datetime_str = datetime.format("%b %e %H:%M").to_string();
-
-    let mut output_string = format!(
-        "{} {:>2} {:<12} {:<12} {:>8} {} {}",
-        permissions,
-        links,
-        user_name,
-        group_name,
-        size,
-        datetime_str,
-        file_name,
-    );
-
-    if classify {
-        output_string.push_str(&classify_file(metadata, file_name));
-    }
-
-    println!("{}", output_string);
-    Ok(())
-}
-
-fn classify_file(metadata: &std::fs::Metadata, file_name: &str) -> String {
-    if metadata.is_dir() {
-        "/".to_owned()
-    } else if metadata.file_type().is_symlink() {
-        format!("@ {}", file_name) // Include @ and the file name for symbolic links
+    // Include '@' symbol if extended attributes are present
+    let extended_attributes = if metadata.file_type().is_symlink()  {
+        "@"
     } else {
-        String::new()
+        " "
+    };  
+    // Iterate over the mapping, applying it to construct the permissions string
+    let permissions: String = permissions_mapping
+        .iter()
+        .map(|&(char, mask)| if metadata.mode() & mask != 0 { char } else { '-' })
+        .collect();
+
+    format!("{}{}", permissions, extended_attributes)
+}
+    
+
+
+#[doc ="Calculates the total disk space occupied by the listed files
+    and directories.For each entry, it retrieves the metadata and
+    accumulates the total size based on the number of blocks used
+    by the entry. The result is the 'total' value displayed at
+    the beginning of the `ls` output."]
+fn calculate_total_size(entries: &[fs::DirEntry]) -> Result<u64, String> {
+    let mut total_size: u64 = 0;
+    for entry in entries {
+        // The metadata() method returns a Result<Metadata, Error> that contains the metadata for the file.
+        // If the metadata cannot be retrieved, an error is returned.
+        let metadata = match entry.metadata() {
+            Ok(meta) => meta,
+            Err(err) => return Err(format!("ls: {}", err)),
+        };
+        // The blocks() method returns the number of 512-byte blocks allocated for the file.
+        total_size += metadata.blocks();
+    }
+    Ok(total_size)
+}
+#[doc = "Prints an indicator character for a directory entry.
+    If the entry is a directory, it prints a forward slash (/).
+    If the entry is executable, it prints an asterisk (*).
+    Otherwise, it prints nothing."]
+fn print_indicator(entry: &fs::DirEntry) {
+    if let Ok(metadata) = entry.metadata() {
+        if metadata.is_dir() {
+            print!("/");
+        } else if metadata.mode() & 0o111 != 0 {
+            print!("*");
+        } else if metadata.mode() & 0o1000 != 0 {
+            print!("|"); // Symbol for FIFOs or pipes
+        } else if metadata.mode() & 0o2000 != 0 {
+            print!("="); // Symbol for sockets
+        } else if metadata.mode() & 0o20000 != 0 {
+            print!("%"); // Symbol for whiteouts
+        } else {
+            // Print a space for other file types
+            print!(" ");
+        }
     }
 }
 
-fn format_permissions(metadata: &std::fs::Metadata) -> String {
-    let mut permissions = String::with_capacity(11);
-    let mode = metadata.permissions().mode();
-
-    permissions.push(if metadata.is_dir() { 'd' } else if metadata.is_file() { '-' } else if metadata.file_type().is_symlink() { 'l' } else { '?' });
-    permissions.push(if mode & 0o400 != 0 { 'r' } else { '-' });
-    permissions.push(if mode & 0o200 != 0 { 'w' } else { '-' });
-    permissions.push(if mode & 0o100 != 0 { 'x' } else { '-' });
-    permissions.push(if mode & 0o040 != 0 { 'r' } else { '-' });
-    permissions.push(if mode & 0o020 != 0 { 'w' } else { '-' });
-    permissions.push(if mode & 0o010 != 0 { 'x' } else { '-' });
-    permissions.push(if mode & 0o004 != 0 { 'r' } else { '-' });
-    permissions.push(if mode & 0o002 != 0 { 'w' } else { '-' });
-    permissions.push(if mode & 0o001 != 0 { 'x' } else { '-' });
-
-    if metadata.file_type().is_symlink() {
-        permissions.push('@'); // Add "@" if it's a symlink
+#[doc = "is_hidden() Determines if a directory entry is hidden.
+    It takes a directory entry and returns true if the file name
+    starts with a dot, indicating that it is hidden. Otherwise,
+    it returns false. If the file name cannot be determined,
+    it returns false as well."]
+fn is_hidden(entry: &fs::DirEntry) -> bool {
+    if let Ok(file_name) = entry.file_name().into_string() {
+        file_name.starts_with('.') // Check if file name starts with a dot
+    } else {
+        false // Unable to determine file name, consider it not hidden
     }
-
-    permissions
 }
