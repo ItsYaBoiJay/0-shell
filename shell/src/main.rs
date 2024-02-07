@@ -50,7 +50,7 @@ fn main() {
                         }
                     }
                     "ls" => {
-                        ls::ls(&args);
+                        let _ = ls::ls(&args);
                     }
                     "pwd" => {
                         pwd::pwd();

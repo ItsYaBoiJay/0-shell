@@ -1,0 +1,25 @@
+ls -l -a -F
+total 16
+drwxr-xr-x@  6 jennie.lindgren  staff   192 Feb  5 12:06 ./
+drwx------@ 10 jennie.lindgren  staff   320 Feb  1 14:37 ../
+drwxr-xr-x  15 jennie.lindgren  staff   480 Feb  5 12:22 .git/
+-rw-r--r--   1 jennie.lindgren  staff  1656 Dec  1 11:42 README.md
+-rw-r--r--   1 jennie.lindgren  staff   352 Feb  5 12:06 ls.txt
+drwxr-xr-x   7 jennie.lindgren  staff   224 Feb  5 14:18 shell/
+
+
+ls -a 
+.		.git		ls.txt
+..		README.md	shell
+
+ls -F
+README.md	ls.txt		shell/
+
+ls -l
+total 16
+-rw-r--r--  1 jennie.lindgren  staff  1656 Dec  1 11:42 README.md
+-rw-r--r--  1 jennie.lindgren  staff   448 Feb  5 15:56 ls.txt
+drwxr-xr-x  7 jennie.lindgren  staff   224 Feb  5 14:18 shell
+
+ls
+README.md	ls.txt		shell
