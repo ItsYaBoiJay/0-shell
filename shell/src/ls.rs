@@ -14,27 +14,37 @@ use std::path::Path;
     It takes a vector of arguments and returns an error
     if one occurred while listing the directory.
     Otherwise, it returns Ok(())"]
-pub fn handle_ls(args: Vec<&str>) -> Result<(), String> {
-    let mut list_hidden = false;
-    let mut list_long = false; 
-    let mut list_indicator = false;
-
-    for arg in args.iter() {
-        match *arg {
-            "-a" => list_hidden = true,
-            "-l" => list_long = true,
-            "-F" => list_indicator = true,
-            _ => return Err(format!("ls: invalid option -- '{}'\nusage: ls [-a] [-l] [-F]", arg)),
+    pub fn handlels(args: Vec<&str>) -> Result<(), String> {
+        let mut args = args; // Declare args as mutable
+        let directory = if args.len() > 0 && !args[0].starts_with('-') {
+            Some(args.remove(0))
+        } else {
+            None
+        };
+    
+        let mut list_hidden = false;
+        let mut list_long = false; 
+        let mut list_indicator = false;
+        for arg in args.iter() {
+            match *arg {
+                "-a" => list_hidden = true,
+                "-l" => list_long = true,
+                "-F" => list_indicator = true,
+                 _=> return Err(format!("ls: invalid option -- '{}'\nusage: ls [-a] [-l] [-F]", arg)),
+            }
         }
+        let dir = match directory {
+            Some(dir) => Path::new(dir),
+            None => Path::new("."),
+        };
+        // env::current_dir() returns a Result<PathBuf, Error> that contains the current directory.
+        // If the current directory cannot be determined, an error is returned.
+    /*     let current_dir = match env::current_dir() {
+            Ok(dir) => dir,
+            Err(err) => return Err(format!("ls: {}", err)),
+        }; */
+        print_entries(&dir, list_long, list_hidden, list_indicator)
     }
-    // env::current_dir() returns a Result<PathBuf, Error> that contains the current directory.
-    // If the current directory cannot be determined, an error is returned.
-    let current_dir = match env::current_dir() {
-        Ok(dir) => dir,
-        Err(err) => return Err(format!("ls: {}", err)),
-    };
-    print_entries(&current_dir, list_long, list_hidden, list_indicator)
-}
 
 #[doc = "print_entries() lists the entries in a directory.
     It takes a directory path, a boolean indicating whether to

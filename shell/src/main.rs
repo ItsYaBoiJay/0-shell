@@ -2,7 +2,7 @@ use std::env;
 use std::io::{ self, Write };
 use std::process::Command;
 
-use crate::ls::handle_ls;
+use crate::ls::handlels;
 pub mod echo;
 pub mod cd;
 pub mod ls;
@@ -52,7 +52,7 @@ fn main() {
                         }
                     }
                     "ls" => {
-                        let _ = handle_ls(args);
+                        let _ = handlels(args);
                     }
                     "pwd" => {
                         pwd::pwd();
