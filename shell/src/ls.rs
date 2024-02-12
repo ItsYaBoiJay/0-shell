@@ -114,7 +114,8 @@ fn print_entry_details(entry_path:&Path) -> Result<(), String> {    //read the f
     };
     let user = get_user_by_uid(metadata.uid()).unwrap();
     let group = get_group_by_gid(metadata.gid()).unwrap();
-    let formatted_time = Local.timestamp(metadata.mtime(), 0).format("%b %e %H:%M").to_string();
+    let datetime: DateTime<Local> = metadata.modified().unwrap_or_else(|_| Local::now().into()).into();
+    let datetime_str = datetime.format("%b %e %H:%M").to_string();
     let permissions = convert_to_permission(&metadata, entry_path.to_str().unwrap());
     print!("{} {} {} {} {} {}",
         permissions,
@@ -122,7 +123,7 @@ fn print_entry_details(entry_path:&Path) -> Result<(), String> {    //read the f
         user.name().to_string_lossy(),
         group.name().to_string_lossy(),
         metadata.size(),
-        formatted_time,
+        datetime_str,
     );
 
     Ok(())
