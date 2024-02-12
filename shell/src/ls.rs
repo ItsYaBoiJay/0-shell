@@ -5,7 +5,6 @@ use std::fs;
 use std::os::unix::fs::MetadataExt;
 use users::{get_user_by_uid, get_group_by_gid};
 use chrono::prelude::*;
-use chrono::TimeZone;
 use xattr::list;
 use std::path::Path;
 
