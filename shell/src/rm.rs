@@ -1,8 +1,5 @@
 use std::fs::{remove_dir_all, remove_file};
 
-#[doc = "The handle_rm() function handles the rm command.
-    It takes a vector of arguments representing the files or directories to remove.
-    It returns Ok(()) if successful, otherwise an error message."]
 pub fn handle_rm(args: Vec<&str>) -> Result<(), String> {
     // Check if no file or directory name is provided
     if args.is_empty() {
@@ -27,8 +24,6 @@ pub fn handle_rm(args: Vec<&str>) -> Result<(), String> {
     Ok(())
 }
 
-#[doc = "Removes a file or directory based on the provided name and recursive flag.
-    Returns Ok(()) if successful, otherwise an error message."]
 fn remove_item(item: &str, recursive: bool) -> Result<(), String> {
     let path = std::path::Path::new(item);
 

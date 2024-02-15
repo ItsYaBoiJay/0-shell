@@ -7,12 +7,8 @@ use users::{get_user_by_uid, get_group_by_gid};
 use chrono::prelude::*;
 use xattr::list;
 use std::path::Path;
+use exacl::{getfacl, setfacl, AclEntry, Perm};
 
-#[doc = "The handle_ls() function handles the ls command.
-    supporting the -a, -l, and -F flags.
-    It takes a vector of arguments and returns an error
-    if one occurred while listing the directory.
-    Otherwise, it returns Ok(())"]
     pub fn handlels(args: Vec<&str>) -> Result<(), String> {
         let mut args = args; // Declare args as mutable
         let directory = if args.len() > 0 && !args[0].starts_with('-') {
@@ -45,16 +41,6 @@ use std::path::Path;
         print_entries(&dir, list_long, list_hidden, list_indicator)
     }
 
-#[doc = "print_entries() lists the entries in a directory.
-    It takes a directory path, a boolean indicating whether to
-    list details, a boolean indicating whether to list hidden
-    files, and a boolean indicating whether to list indicators.
-    it uses the read_dir() method to read the directory entries.
-    then filters out hidden files if the -a flag is not set,
-    uses print_entry_details() to print the details of each entry,
-    and print_indicator() to print an indicator character for each entry.
-    it returns an error if one occurred while reading the directory.
-    Otherwise, it returns Ok(())"]
 fn print_entries(dir: &Path, details:bool, list_hidden: bool, list_indicator: bool) -> Result<(), String> {
         let mut entries = match fs::read_dir(dir) {
             Ok(entries) => {
@@ -100,12 +86,6 @@ fn print_entries(dir: &Path, details:bool, list_hidden: bool, list_indicator: bo
     Ok(())
 }
 
-#[doc = "Prints the details of a directory entry.
-    It takes a directory entry and prints the metadata.
-    including the mode, number of links, user ID, size,
-    and name of the entry. It returns an error if one
-    occurred while retrieving the metadata. Otherwise,
-    it returns Ok(())"]
 fn print_entry_details(entry_path:&Path) -> Result<(), String> {
     let metadata = match entry_path.metadata() {
         Ok(meta) => meta,
@@ -133,13 +113,15 @@ fn print_entry_details(entry_path:&Path) -> Result<(), String> {
 
     Ok(())
 }
-#[doc="Converts the mode bits of a file to a string representing
-    It takes the metadata and the path of the file and returns
-    a string representing the file permissions. The string
-    consists of nine characters, each representing a permission
-    (read, write, or execute) for the owner, group, and others.
-    If extended attributes are present, an '@' symbol is appended
-    to the end of the string. The string is then returned."]
+
+fn has_extended_acl(path: &str) -> Result<bool, std::io::Error> {
+    let acl: Vec<AclEntry> = getfacl(path, None)?;
+    if acl.is_empty() {
+        return Ok(false);
+    }
+    return Ok(true);
+}
+
 fn convert_to_permission(metadata: &fs::Metadata, path: &str) -> String {
     // Define a mapping of bit positions to permission characters
     // the codes are octal literals representing file mode permission bits in Unix-like systems
@@ -163,6 +145,8 @@ fn convert_to_permission(metadata: &fs::Metadata, path: &str) -> String {
         Ok(attributes) => attributes.count() != 0, // Extended attributes found
         Err(_) => false, // Error occurred or no extended attributes found
     };
+    let acl_indicator =  has_extended_acl(path).unwrap();
+
     // Determine the extended attributes indicator based on the result
     let extended_attributes_indicator: &str = if extended_attributes_present { "@" } else { " " };
     // Determine the directory indicator based on the mode bits
@@ -177,11 +161,6 @@ fn convert_to_permission(metadata: &fs::Metadata, path: &str) -> String {
     format!("{}{}{}", directory_indicator, permissions, extended_attributes_indicator)
 }
 
-#[doc ="Calculates the total disk space occupied by the listed files
-    and directories.For each entry, it retrieves the metadata and
-    accumulates the total size based on the number of blocks used
-    by the entry. The result is the 'total' value displayed at
-    the beginning of the `ls` output."]
 fn calculate_total_size(entries: &[fs::DirEntry]) -> Result<u64, String> {
     let mut total_size: u64 = 0;
     for entry in entries {
@@ -196,10 +175,7 @@ fn calculate_total_size(entries: &[fs::DirEntry]) -> Result<u64, String> {
     }
     Ok(total_size)
 }
-#[doc = "Prints an indicator character for a directory entry.
-    If the entry is a directory, it prints a forward slash (/).
-    If the entry is executable, it prints an asterisk (*).
-    Otherwise, it prints nothing."]
+
 fn print_indicator(entry: &fs::DirEntry) {
     if let Ok(metadata) = entry.metadata() {
         if metadata.is_dir() {
@@ -219,11 +195,6 @@ fn print_indicator(entry: &fs::DirEntry) {
     }
 }
 
-#[doc = "is_hidden() Determines if a directory entry is hidden.
-    It takes a directory entry and returns true if the file name
-    starts with a dot, indicating that it is hidden. Otherwise,
-    it returns false. If the file name cannot be determined,
-    it returns false as well."]
 fn is_hidden(entry: &fs::DirEntry) -> bool {
     if let Ok(file_name) = entry.file_name().into_string() {
         file_name.starts_with('.') // Check if file name starts with a dot
@@ -234,7 +205,6 @@ fn is_hidden(entry: &fs::DirEntry) -> bool {
 
 /// Adds the entries for the current directory (`.`) and parent directory (`..`) to the list of entries.
 fn add_current_and_parent_name_to_entries(details:bool, list_indicator: bool) { 
-
 
     if !details{
         // only check if the current directory and parent directory are exist and then print . and ..
@@ -279,6 +249,4 @@ fn add_current_and_parent_name_to_entries(details:bool, list_indicator: bool) {
             println!();
         }
     }
-
-
 }

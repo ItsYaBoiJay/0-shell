@@ -1,8 +1,6 @@
 use std::fs;
 use std::path::Path;
 
-#[doc = "Handles the 'mv' command, which moves a file or directory.
-    It takes a vector of arguments and returns a Result indicating success or an error message."]
 pub fn handle_mv(args: Vec<&str>) -> Result<(), String> {
     // Check if the number of arguments is valid
     if args.len() != 2 {
@@ -16,9 +14,6 @@ pub fn handle_mv(args: Vec<&str>) -> Result<(), String> {
     move_file(source, destination)
 }
 
-#[doc = "Moves a file or directory from the source path to the destination path.
-    Using the fs::rename function, it performs the move operation.
-    It returns a Result indicating success or an error message."]
 fn move_file(source: &str, destination: &str) -> Result<(), String> {
     let source_path = Path::new(source);
     let destination_path = Path::new(destination);

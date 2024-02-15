@@ -46,11 +46,7 @@ fn main() {
                         exit::exit(0);
                     }
                     "cd" => {
-                        if let Some(dir) = args.get(0) {
-                            cd::cd(dir);
-                        } else {
-                            eprintln!("No directory provided for cd command");
-                        }
+                            let _ = cd::handle_cd(args);
                     }
                     "ls" => {
                         let _ = handlels(args);
