@@ -25,6 +25,7 @@ Manages program interruption with Ctrl + D.
 ### How to use the program
 To use the shell, simply run the executable. You will be presented with a prompt where you can enter commands. The shell will execute the commands and display the output.
 
+> cd into shell and then;
 `cargo run`
 
 which will show this\: ~/Desktop/0-shell/shell $ 
