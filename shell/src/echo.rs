@@ -41,9 +41,5 @@ pub fn echo(args: &[&str]) -> Result<(), std::io::Error> {
 }
 
 fn remove_quotes(s: &str) -> &str {
-    if s.starts_with('"') && s.ends_with('"') {
-        &s[1..s.len() - 1]
-    } else {
-        s
-    }
+    s.trim_matches(['"', '\''].as_ref())
 }
