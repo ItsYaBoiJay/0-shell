@@ -30,7 +30,20 @@ pub fn echo(args: &[&str]) -> Result<(), std::io::Error> {
     }
 
     // If no redirection, echo to console
-    let content = args.join(" ");
-    println!("{}", content);
+    for (i, arg) in args.iter().enumerate() {
+        if i != 0 {
+            print!(" ");
+        }
+        print!("{}", remove_quotes(arg));
+    }
+    println!();
     Ok(())
+}
+
+fn remove_quotes(s: &str) -> &str {
+    if s.starts_with('"') && s.ends_with('"') {
+        &s[1..s.len() - 1]
+    } else {
+        s
+    }
 }
