@@ -106,23 +106,29 @@ fn print_entries(dir: &Path, details:bool, list_hidden: bool, list_indicator: bo
     and name of the entry. It returns an error if one
     occurred while retrieving the metadata. Otherwise,
     it returns Ok(())"]
-fn print_entry_details(entry_path:&Path) -> Result<(), String> {    //read the file in the path
+fn print_entry_details(entry_path:&Path) -> Result<(), String> {
     let metadata = match entry_path.metadata() {
         Ok(meta) => meta,
         Err(err) => return Err(format!("ls: {}", err)),
     };
     let user = get_user_by_uid(metadata.uid()).unwrap();
     let group = get_group_by_gid(metadata.gid()).unwrap();
-    let datetime: DateTime<Local> = metadata.modified().unwrap_or_else(|_| Local::now().into()).into();
-    let datetime_str = datetime.format("%b %e %H:%M").to_string();
+    let mut formatted_time = String::new();
+    // check if the year of the file is the current year or not otherwise print the year instead of %H:%M
+    if Local::now().year() != Local.timestamp(metadata.mtime(), 0).year() {
+        formatted_time = Local.timestamp(metadata.mtime(), 0).format("%b %e  %Y").to_string();
+    } else {
+        formatted_time = Local.timestamp(metadata.mtime(), 0).format("%b %e %H:%M").to_string();
+    }
     let permissions = convert_to_permission(&metadata, entry_path.to_str().unwrap());
-    print!("{} {} {} {} {} {}",
+    print!("{:12} {:>3} {:20} {:10} {:6} {:12}",
         permissions,
         metadata.nlink(),
         user.name().to_string_lossy(),
         group.name().to_string_lossy(),
+        // print the size of the file in bytes if the file is not a directory
         metadata.size(),
-        datetime_str,
+        formatted_time,
     );
 
     Ok(())

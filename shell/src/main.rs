@@ -3,6 +3,7 @@ use std::io::{ self, Write };
 use std::process::Command;
 
 use crate::ls::handlels;
+use crate::rm::handle_rm;
 pub mod echo;
 pub mod cd;
 pub mod ls;
@@ -71,22 +72,7 @@ fn main() {
                             eprintln!("Usage: cp <source> <destination>");
                         }
                     }
-                    "rm" => {
-                        let files: Vec<&str> = args
-                            .iter()
-                            .filter(|&&x| !x.starts_with('-'))
-                            .copied()
-                            .collect();
-                        let recursive = args
-                            .iter()
-                            .any(|&x| (x == "-r" || x == "-R" || x == "--recursive"));
-                        let force = args.iter().any(|&x| (x == "-f" || x == "--force"));
-                    
-                        match rm::rm(&files, recursive, force) {
-                            Ok(_) => println!("Removal successful"),
-                            Err(e) => eprintln!("Error: {}", e),
-                        }
-                    }
+                    "rm" => {let _ = handle_rm(args);}
                     
                     "mkdir" => {
                         if let Some(dir) = args.get(0) {
